@@ -368,6 +368,60 @@ struct generic_forward_cfg camkes_clk_car =  {
 };
 
 #endif
+
+#define DATA_READY 0xE0000000
+static char ignore_write = 0; 
+static int handle_data_ready_fault(struct device* d, vm_t* vm, fault_t* fault){
+
+  uint32_t fdata = fault_get_data(fault);
+  uint32_t faddr = fault_get_address(fault);
+  uint32_t fmask = fault_get_data_mask(fault);
+  printf("Data ready\n");  
+  ignore_write = 1;
+  do_print_emit();
+  return advance_fault(fault);  
+}
+
+const struct device dev_data_ready = {
+    .devid = DEV_CUSTOM,
+    .name = "data_ready",
+    .pstart = DATA_READY,
+    .size = 0x1000,
+    .handle_page_fault = handle_data_ready_fault,
+    .priv = NULL
+};
+
+
+#define DATA 0xE0001000
+static int handle_data_fault(struct device* d, vm_t* vm, fault_t* fault){
+  uint32_t fdata = fault_get_data(fault);
+  uint32_t faddr = fault_get_address(fault);
+  uint32_t fmask = fault_get_data_mask(fault);
+  printf("Trying to write to %x\n",faddr);
+  if(!ignore_write) {
+    ((volatile char*)data)[faddr - DATA] = fdata;
+  }
+  return advance_fault(fault);
+}
+
+const struct device dev_data = {
+    .devid = DEV_CUSTOM,
+    .name = "data",
+    .pstart = DATA,
+    .size = 0x1000,
+    .handle_page_fault = handle_data_fault,
+    .priv = NULL
+    };
+
+static void done_printing_callback(void * unused) {
+  int err;
+  printf("Data transmitted\n");  
+  ignore_write = 0;
+  err = done_printing_reg_callback(done_printing_callback,NULL);
+  assert(!err);
+
+}
+
 static int
 install_linux_devices(vm_t* vm)
 {
@@ -411,6 +465,13 @@ install_linux_devices(vm_t* vm)
         assert(!err);
     }
 
+    err = vm_add_device(vm, &dev_data_ready);
+    assert(!err);
+    err = vm_add_device(vm, &dev_data);
+    assert(!err);
+    err = done_printing_reg_callback(done_printing_callback,NULL);
+    assert(!err);
+      
     /* Install ram backed devices */
     /* Devices that are just anonymous memory mappings */
     for (i = 0; i < sizeof(linux_ram_devices) / sizeof(*linux_ram_devices); i++) {
@@ -576,4 +637,8 @@ load_linux(vm_t* vm, const char* kernel_name, const char* dtb_name)
 
     return 0;
 }
+
+
+
+
 #endif
