@@ -376,9 +376,11 @@ static int handle_data_ready_fault(struct device* d, vm_t* vm, fault_t* fault){
   uint32_t fdata = fault_get_data(fault);
   uint32_t faddr = fault_get_address(fault);
   uint32_t fmask = fault_get_data_mask(fault);
-  printf("Data ready\n");  
+  printf("VM: Data ready.\n");
+  print_mutex_lock();
   ignore_write = 1;
   do_print_emit();
+  print_mutex_unlock();
   return advance_fault(fault);  
 }
 
@@ -397,9 +399,14 @@ static int handle_data_fault(struct device* d, vm_t* vm, fault_t* fault){
   uint32_t fdata = fault_get_data(fault);
   uint32_t faddr = fault_get_address(fault);
   uint32_t fmask = fault_get_data_mask(fault);
-  printf("Trying to write to %x\n",faddr);
+
+  print_mutex_lock();
   if(!ignore_write) {
+    print_mutex_unlock();
+    printf("VM: Writing byte %x to %x.\n", fdata, faddr);
     ((volatile char*)data)[faddr - DATA] = fdata;
+  } else {
+    print_mutex_unlock();
   }
   return advance_fault(fault);
 }
@@ -415,8 +422,10 @@ const struct device dev_data = {
 
 static void done_printing_callback(void * unused) {
   int err;
-  printf("Data transmitted\n");  
+  printf("VM: Data received.\n");  
+  print_mutex_lock();
   ignore_write = 0;
+  print_mutex_unlock();
   err = done_printing_reg_callback(done_printing_callback,NULL);
   assert(!err);
 
