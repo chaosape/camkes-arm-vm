@@ -339,7 +339,7 @@ vmm_init(void)
         }
         err = allocman_utspace_add_uts(allocman, 1, &path, &size, &paddr, utType);
         assert(!err);
-    }
+    }    
 
     /* Initialize the vspace */
     err = sel4utils_bootstrap_vspace(vspace, &_alloc_data,

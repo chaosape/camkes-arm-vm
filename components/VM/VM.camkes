@@ -45,7 +45,14 @@ component VM {
     attribute int num_extra_frame_caps;
     attribute int extra_frame_map_address;
 
-    dataport Buf(4096) data;
-    emits DoPrint do_print;
-    consumes DonePrinting done_printing;
+    dataport Buf(4096) str;
+    has mutex str_mutex;
+    emits GiveString give_string;
+    consumes GotString got_string;
+    
+    dataport Buf(4096) rts;
+    has mutex rts_mutex;
+    consumes GiveGnirts give_gnirts;
+    emits GotGnirts got_gnirts;
+    
 }
