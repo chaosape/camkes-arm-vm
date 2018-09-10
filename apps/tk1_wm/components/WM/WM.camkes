@@ -1,0 +1,11 @@
+/* XXX: How do I get the VM modules to export this file properly? */
+#include "../../../../components/VM/src/vm.h"
+
+component WM {
+  control;
+  dataport Buf(MISSION_COMMAND_SIZE) mission_command;
+  consumes GiveMissionCommand give_mission_command;
+  emits GotMissionCommand got_mission_command;    
+  
+}
+	
