@@ -18,5 +18,5 @@ file(GLOB sources ./src/*.c)
 
 DeclareCAmkESComponent(UARTSHIM
     SOURCES ${sources}
-    INCLUDES
+    INCLUDES ../../include/
 )

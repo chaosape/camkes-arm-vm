@@ -12,49 +12,160 @@
 #include <platsupport/serial.h>
 #include <camkes.h>
 
+#define MUTEX_OP(X) assert(X==0)
+#define SEM_OP(X) assert(X==0)
+#define INTR_OP(X) assert(X==0)
+#define ENTRY //fprintf(stderr,"Enter %s\n",__FUNCTION__);
+#define EXIT //fprintf(stderr,"Exit %s\n",__FUNCTION__);
+
 #define BAUD_RATE 115200
 //#define BAUD_RATE 57600
 
+void hexDump(char *desc, void *addr, int len) 
+{
+    int i;
+    unsigned char buff[17];
+    unsigned char *pc = (unsigned char*)addr;
+
+    // Output description if given.
+    if (desc != NULL)
+        printf ("%s:\n", desc);
+
+    // Process every byte in the data.
+    for (i = 0; i < len; i++) {
+        // Multiple of 16 means new line (with line offset).
+
+        if ((i % 16) == 0) {
+            // Just don't print ASCII for the zeroth line.
+            if (i != 0)
+                printf("  %s\n", buff);
+
+            // Output the offset.
+            printf("  %04x ", i);
+        }
+
+        // Now the hex code for the specific character.
+        printf(" %02x", pc[i]);
+
+        // And store a printable ASCII character for later.
+        if ((pc[i] < 0x20) || (pc[i] > 0x7e)) {
+            buff[i % 16] = '.';
+        } else {
+            buff[i % 16] = pc[i];
+        }
+
+        buff[(i % 16) + 1] = '\0';
+    }
+
+    // Pad out last line if not exactly 16 characters.
+    while ((i % 16) != 0) {
+        printf("   ");
+        i++;
+    }
+
+    // And print the final ASCII bit.
+    printf("  %s\n", buff);
+}
+
 static ps_chardevice_t serial_device;
 
-void
-interrupt_handle()
-{
-    device_lock();
-    ps_cdev_handle_irq(&serial_device, /* unused */ 0);
-    device_unlock();
-
-    interrupt_acknowledge();
-}
+#define WRITE_PKTBUF_SIZE 1024
+static UARTPacket writepktbuf[WRITE_PKTBUF_SIZE];
+static uint32_t writepktbuffront = 0;
+static uint32_t writepktbuflength = 0;
+static bool can_write = true;
 
 static void write_callback(ps_chardevice_t* device,
                            enum chardev_status stat,
-                           size_t bytes_transfered,
+                           size_t bytes_transferred,
                            void* token) {
-    write_sem_post();
-    const bool b = true;
-    tb_out_send_success0_enqueue(/* unused */ &b);
+  bool send = false;
+  UARTPacket pkt;
+  UARTPacket * pktp = (UARTPacket*)token;
+  ENTRY;
+  if(bytes_transferred < pktp->buf_len) {
+    uint32_t remaining = pktp->buf_len - bytes_transferred;
+    printf("UARTSHIM: Did not complete last send, %u bytes remain.\n",remaining);
+    pkt = *pktp;
+    memcpy(pktp->buf,pkt.buf+bytes_transferred,remaining);
+    pktp->buf_len = remaining;
+    assert(ps_cdev_write(&serial_device,
+			 writepktbuf[writepktbuffront].buf,
+			 writepktbuf[writepktbuffront].buf_len,
+			 write_callback,
+			 pktp) == 0);
+    return;
+  }
+  
+  free(token);
+  MUTEX_OP(write_pktbuf_mutex_lock());
+  /*printf("UARTSHIM: dequeue (front=%u,length=%u,packet size=%u).\n"
+	 ,writepktbuffront
+	 ,writepktbuflength
+	 ,writepktbuf[writepktbuffront].buf_len);*/
+
+  writepktbuffront = (writepktbuffront + 1) % WRITE_PKTBUF_SIZE;
+  writepktbuflength--;
+  pkt = writepktbuf[writepktbuffront];
+  send = writepktbuflength > 0;
+  MUTEX_OP(write_pktbuf_mutex_unlock());
+
+
+  if(send) {
+    //for(int i = 0; i < 100000000; i++) {}
+    pktp = (UARTPacket*)malloc(sizeof(UARTPacket));
+    *pktp = pkt;
+    //hexDump("Sending:\n",
+    //	    pktp->buf,
+    //	    pktp->buf_len);
+    assert(ps_cdev_write(&serial_device,
+			 pktp->buf,
+			 pktp->buf_len,
+			 write_callback,
+			 pktp) == 0);
+  }
+  EXIT;
 }
 
-static void in_uart_packet_callback(void *unused) {
-    SMACCM_DATA__UART_Packet_i packet;
-    while (tb_in_uart_packet_dequeue(&packet)) {
-        write_sem_wait();
-        device_lock();
-        int result = ps_cdev_write(&serial_device,
-                                   &packet.buf,
-                                   packet.buf_len,
-                                   &write_callback,
-                                   NULL);
 
-        device_unlock();
-        if (result != 0) {
-            printf("UART Shim: error writing to UART\n");
-        }
-    }
-    
-    tb_in_uart_packet_notification_reg_callback(&in_uart_packet_callback, NULL);
+bool incoming_uartwrite(const UARTPacket * packet) {
+  bool send = false;
+  bool result = true;
+  uint32_t idx;
+  UARTPacket pkt;
+  
+  ENTRY;
+  MUTEX_OP(write_pktbuf_mutex_lock());
+  if(writepktbuflength < WRITE_PKTBUF_SIZE) {
+    idx = (writepktbuffront+writepktbuflength) % WRITE_PKTBUF_SIZE;
+    writepktbuf[idx] = *packet;
+    pkt = *packet;
+    send = writepktbuflength == 0;
+    writepktbuflength++;
+    //printf("UARTSHIM: enqueue (front=%u,length=%u).\n",writepktbuffront,writepktbuflength); 
+  } else {
+    result = false;
+  }
+  MUTEX_OP(write_pktbuf_mutex_unlock());
+  if(send) {
+    UARTPacket * pktp = (UARTPacket*)malloc(sizeof(UARTPacket));
+    *pktp = pkt;
+    MUTEX_OP(device_lock());
+    //hexDump("Sending:\n",
+    //	    pktp->buf,
+    //	    pktp->buf_len);
+    assert(ps_cdev_write(&serial_device,
+			 pktp->buf,
+			 pktp->buf_len,
+			 write_callback,
+			 pktp) == 0);
+    MUTEX_OP(device_unlock());  
+  }
+  EXIT;
+  return result;
 }
+
+
 
 void pre_init(void)
 {
@@ -74,32 +185,40 @@ void pre_init(void)
 
     serial_device.flags &= ~SERIAL_AUTO_CR;
     serial_configure(&serial_device, BAUD_RATE, 8, PARITY_NONE, 1);
-
-    tb_in_uart_packet_notification_reg_callback(&in_uart_packet_callback, NULL);
     
-    printf("UART initialized\n");
+    printf("UARTSHIM: initialized.\n");
 }
 
-static struct SMACCM_DATA__UART_Packet_i read_packet;
+
+static UARTPacket pkt;
 
 static void read_callback(ps_chardevice_t *device,
-                   enum chardev_status stat,
-                   size_t bytes_transfered,
-                   void *token) {
-    read_packet.buf_len = bytes_transfered;
-    if (!tb_out_uart_packet_enqueue(&read_packet)) {
-        printf("UART Shim: Unable to put UART packet in queue\n");
-    }
-
-    // Re-register
-    // Don't device_lock() since this is called from within interrupt_handler()
-    ps_cdev_read(&serial_device, read_packet.buf, 255, read_callback, NULL);
+			  enum chardev_status stat,
+			  size_t bytes_transfered,
+			  void *token) {
+  pkt.buf_len = bytes_transfered;
+  outgoing_uartwrite(&pkt);
+  ps_cdev_read(&serial_device, pkt.buf,255, read_callback, NULL);
 }
+
+void
+interrupt_handle()
+{
+  /* VERY IMPORTANT: This interrupt and subsequent call to ps_cdev_handle_irq 
+     causes callbacks to be serviced. */
+  MUTEX_OP(device_lock());
+  ps_cdev_handle_irq(&serial_device, 0);
+  MUTEX_OP(device_unlock());
+  INTR_OP(interrupt_acknowledge());
+}
+
 
 int run(void)
 {
-    device_lock();
-    ps_cdev_read(&serial_device, read_packet.buf, 255, read_callback, NULL);
-    device_unlock();
-    return 0;
+  MUTEX_OP(device_lock());
+  ps_cdev_read(&serial_device, pkt.buf,255, read_callback, NULL);
+  MUTEX_OP(device_unlock());
+    
+  return 0;
 }
+

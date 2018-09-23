@@ -34,7 +34,12 @@ DeclareCAmkESRootserver(tk1_wm.camkes CPP_FLAGS ${cpp_flags})
 CAmkESAddImportPath(components)
 CAmkESAddImportPath(interfaces)
 
-# Add VM components
+# Add components
 add_subdirectory(components/WM)
 add_subdirectory(components/UART)
+add_subdirectory(components/CLOCK)
 
+
+CAmkESAddImportPath(../../../DARPA-tk1/components)
+CAmkESAddImportPath(../../../DARPA-tk1/includes)
+CAmkESAddImportPath(../../../DARPA-tk1/interfaces)

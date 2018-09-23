@@ -14,21 +14,40 @@ import <std_connector.camkes>;
 import <VM/vm_common.camkes>;
 import <WM/WM.camkes>;
 import <UART/UART.camkes>;
-
+import <CLOCK/CLOCK.camkes>;
 
 assembly {
-    composition {
-      component WM wm;
+  composition {
 
-      connection seL4Notification
-        conn1(from vm.give_mission_command, to wm.give_mission_command);
-      connection seL4Notification
-        conn2(from wm.got_mission_command, to vm.got_mission_command);
-      connection seL4SharedData
-        conn3(from wm.mission_command, to vm.missioncommand_out);  
-    }
-    configuration {
-        vm.num_extra_frame_caps = 0;
-        vm.extra_frame_map_address = 0xd0000000;
-    }
+    component WM wm;
+    component UART uart;
+    component CLOCK clk;
+    
+    connection seL4Notification
+      conn1(from vm.give_mission_command, to wm.give_mission_command);
+    connection seL4Notification
+      conn2(from wm.got_mission_command, to vm.got_mission_command);
+    connection seL4SharedData
+      conn3(from wm.mission_command, to vm.missioncommand_out);
+    connection seL4RPCCall
+      conn4 (from vm.uartfwd, to uart.uartfwd);
+    connection seL4RPCCall
+      conn5 (from vm.clkcarfwd, to clk.clkcarfwd);
+    connection seL4RPCCall
+      conn6 (from uart.clkcar, to clk.clkcar);
+    connection seL4RPCCall
+      conn7 (from wm.sink, to uart.incoming);
+    connection seL4RPCCall
+      conn8 (from uart.outgoing, to wm.source);
+
+
+  }
+  configuration {
+    vm.num_extra_frame_caps = 0;
+    vm.extra_frame_map_address = 0xd0000000;
+    vm.priority = 100;
+    wm.priority = 150;
+    uart.priority = 250;
+    clk.priority = 250;
+  }
 }

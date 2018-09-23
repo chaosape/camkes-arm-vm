@@ -18,5 +18,7 @@ file(GLOB sources src/*.c src/CMASI/*.c src/CMASI/common/*.c)
 
 DeclareCAmkESComponent(WM
     SOURCES ${sources}
-    INCLUDES
+    # XXX: There should be someone to express that this component is dependent
+    # on the UART module in a path agnostic fashion.
+    INCLUDES ../UART/include
 )

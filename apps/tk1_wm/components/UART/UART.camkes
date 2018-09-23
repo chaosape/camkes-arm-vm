@@ -1,8 +1,7 @@
 import <UARTSHIM/UARTSHIM.camkes>;
 
-/*import <tb_Monitor_SMACCM_DATA__UART_Packet_i_23388.idl4>;
-import <tb_Monitor_bool_1.idl4>;*/
 
+import <uartwriter.idl4>;
 import <clkcar.idl4>;
 import <gen_fwd.idl4>;
 
@@ -12,19 +11,17 @@ component uartbase {
     emits DataAvailable irq;
 }
 
-component UART_Driver {
-    /*include <tb_soi_tk1_types.h>;
-    uses tb_Monitor_SMACCM_DATA__UART_Packet_i_23388 tb_out_uart_packet0;
-    uses tb_Monitor_SMACCM_DATA__UART_Packet_i_23388 tb_in_uart_packet;
-    consumes QueuedData tb_in_uart_packet_notification;
-    uses tb_Monitor_bool_1 tb_out_send_success0;*/
+component UART {
 
     uses clkcar_inf clkcar;
     provides gen_fwd_inf uartfwd;
+    provides uartwriter incoming;
+    uses uartwriter outgoing;
+
 
     composition {
         component uartbase uartbase_obj;
-        component uart_shim uart_shim_obj;
+        component UARTSHIM uart_shim_obj;
 
         connection seL4HardwareMMIO tk1_uart_regs_mmio(from uart_shim_obj.tk1_uart_regs, to uartbase_obj.tk1_uart_regs);
         connection seL4HardwareInterrupt uart_irq(from uartbase_obj.irq, to uart_shim_obj.interrupt);
@@ -33,6 +30,8 @@ component UART_Driver {
         export uart_shim_obj.tb_in_uart_packet -> tb_in_uart_packet;
         export uart_shim_obj.tb_in_uart_packet_notification -> tb_in_uart_packet_notification;
         export uart_shim_obj.tb_out_send_success0 -> tb_out_send_success0;*/
+	export uart_shim_obj.incoming -> incoming;
+	export uart_shim_obj.outgoing -> outgoing;
         export uart_shim_obj.gen_fwd -> uartfwd;
         export uart_shim_obj.clkcar -> clkcar;
     }
@@ -48,6 +47,8 @@ component UART_Driver {
 
         uartbase_obj.tk1_uart_regs_paddr = 0x70006000;
         uartbase_obj.tk1_uart_regs_size = 0x1000;
+
+	uart_shim_onj.run_wake_value = 0;
 
         // uartbase_obj.irq_irq_number = 68;   // UART A
         uartbase_obj.irq_irq_number = 69;      // UART B

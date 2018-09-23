@@ -1,0 +1,5 @@
+procedure uartwriter {
+    include <uartpacket.h>;
+
+    bool uartwrite(refin UARTPacket arg);
+}

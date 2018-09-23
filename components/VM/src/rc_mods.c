@@ -61,13 +61,13 @@ static int handle_mission_command_fault(struct device* d, vm_t* vm, fault_t* fau
   } else {
     mission_command_out_mutex_lock();
     if(!mission_command_ready) {
-      printf("VM: Write to %x(index = %u).\n",faddr, faddr-MISSION_COMMAND);
+      /* printf("VM: Write to %x(index = %u).\n",faddr, faddr-MISSION_COMMAND); */
       ((volatile char*)missioncommand_out)[faddr - MISSION_COMMAND] = fdata;
       mission_command_out_mutex_unlock();
     } else {
       mission_command_out_mutex_unlock();
-      printf("VM: Write to %x unsuccessful; waiting on got_mission_command event.\n"
-	,faddr);   
+      /* printf("VM: Write to %x unsuccessful; waiting on got_mission_command event.\n"
+	 ,faddr);   */
     }
   }
   return advance_fault(fault);

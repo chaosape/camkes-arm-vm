@@ -73,7 +73,7 @@ assembly {
                     "0xb0000000:28", // Linux kernel memory regions
                     "0xc0000000:29", // Linux kernel memory regions
                     "0xe0000000:28", // Linux kernel memory regions
-#if TK1DEVICEFWD == 0
+#if 1 == 0
                     "0x60006000:12", // Clock and Reset (CAR)
                     "0x70006000:12", // UARTA, UARTB, VFIR, UARTC, UARTD, HDMI_IOBIST, MIPI_IOBIST, LPDDR2_IOBIST, PCIE_X2_0_IOBIST, PCIE_X2_1_IOBIST, PCIE_X4_IOBIST, SATA_IOBIST
 #endif

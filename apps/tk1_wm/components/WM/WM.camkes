@@ -1,11 +1,20 @@
 /* XXX: How do I get the VM modules to export this file properly? */
 #include "../../../../components/VM/src/vm.h"
 
+import <uartwriter.idl4>;
+
 component WM {
   control;
   dataport Buf(MISSION_COMMAND_SIZE) mission_command;
   consumes GiveMissionCommand give_mission_command;
-  emits GotMissionCommand got_mission_command;    
+  emits GotMissionCommand got_mission_command;
+  uses uartwriter sink;
+  provides uartwriter source;
+
+  has semaphore wake_run;
+  has mutex mission_command_ready;
+  has mutex current_waypoint;
   
+
 }
 	

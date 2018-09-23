@@ -12,19 +12,11 @@
 
 cmake_minimum_required(VERSION 3.8.2)
 
-project(UART C)
+project(CLKCAR C)
 
 file(GLOB sources ./src/*.c)
 
-CAmkESAddImportPath(components)
-
-CAmkESAddImportPath(interface)
-
-CAmkESAddImportPath(include)
-
-add_subdirectory(components/UARTSHIM)
-
-DeclareCAmkESComponent(UART
+DeclareCAmkESComponent(CLKCAR
     SOURCES ${sources}
-    INCLUDES ./include 
+    INCLUDES
 )
