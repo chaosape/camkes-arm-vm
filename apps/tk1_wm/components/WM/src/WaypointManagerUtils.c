@@ -4,8 +4,8 @@
  * License: Air Force Open Source Agreement Version 1.0
  *
  * Testing build:                                                          
- *   o gcc -g -I../CMASI -I../CMASI/common/ -D__WAYPOINTMANAGERUTILS_TESTS__ \
- *     .c ../CMASI/*.c ../CMASI/common/*.c -o tests
+ *   o gcc -g -I./CMASI -I./CMASI/common/ -D__WAYPOINTMANAGERUTILS_TESTS__ \
+ *     WaypointManagerUtils.c ./CMASI/*.c ./CMASI/common/*.c -o tests
  *   o ./tests
  *   
  */
@@ -184,23 +184,23 @@ bool MissionCommandSegmentCheck(const Waypoint * ws,
     RETURNONFAIL(owp != NULL);
     swp = FindWaypoint(ws_seg,ws_seg_len,it_id);
     RETURNONFAIL(swp != NULL);
-    RETURNONFAIL(owp->super.latitude == swp->super.latitude);
-    RETURNONFAIL(owp->super.longitude == swp->super.longitude);
-    RETURNONFAIL(owp->super.altitude == swp->super.altitude);
-    RETURNONFAIL(owp->super.altitudetype == swp->super.altitudetype);
+    RETURNONFAIL(owp->super.Latitude == swp->super.Latitude);
+    RETURNONFAIL(owp->super.Longitude == swp->super.Longitude);
+    RETURNONFAIL(owp->super.Altitude == swp->super.Altitude);
+    RETURNONFAIL(owp->super.AltitudeType == swp->super.AltitudeType);
     RETURNONFAIL(owp->Number == swp->Number);
     RETURNONFAIL(owp->NextWaypoint == swp->NextWaypoint);
-    RETURNONFAIL(owp->speed == swp->speed);
-    RETURNONFAIL(owp->speedtype == swp->speedtype);
-    RETURNONFAIL(owp->climbrate == swp->climbrate);
-    RETURNONFAIL(owp->turntype == swp->turntype);
-    RETURNONFAIL(owp->vehicleactionlist == swp->vehicleactionlist);
-    RETURNONFAIL(owp->vehicleactionlist_ai.length == swp->vehicleactionlist_ai.length);
-    RETURNONFAIL(owp->contingencywaypointa == swp->contingencywaypointa);
-    RETURNONFAIL(owp->contingencywaypointb == swp->contingencywaypointb);
-    RETURNONFAIL(owp->associatedtasks == swp->associatedtasks);
-    RETURNONFAIL(owp->associatedtasks_ai.length == swp->associatedtasks_ai.length);
-    it_id = swp->nextwaypoint;
+    RETURNONFAIL(owp->Speed == swp->Speed);
+    RETURNONFAIL(owp->SpeedType == swp->SpeedType);
+    RETURNONFAIL(owp->ClimbRate == swp->ClimbRate);
+    RETURNONFAIL(owp->TurnType == swp->TurnType);
+    RETURNONFAIL(owp->VehicleActionList == swp->VehicleActionList);
+    RETURNONFAIL(owp->VehicleActionList_ai.length == swp->VehicleActionList_ai.length);
+    RETURNONFAIL(owp->ContingencyWaypointA == swp->ContingencyWaypointA);
+    RETURNONFAIL(owp->ContingencyWaypointB == swp->ContingencyWaypointB);
+    RETURNONFAIL(owp->AssociatedTasks == swp->AssociatedTasks);
+    RETURNONFAIL(owp->AssociatedTasks_ai.length == swp->AssociatedTasks_ai.length);
+    it_id = swp->NextWaypoint;
   }
   
   /* Check that the last waypoint is identical and that its nxid
@@ -209,64 +209,64 @@ bool MissionCommandSegmentCheck(const Waypoint * ws,
   RETURNONFAIL(owp != NULL);
   swp = FindWaypoint(ws_seg,ws_seg_len,it_id);
   RETURNONFAIL(swp != NULL);
-  RETURNONFAIL(owp->super.latitude == swp->super.latitude);
-  RETURNONFAIL(owp->super.longitude == swp->super.longitude);
-  RETURNONFAIL(owp->super.altitude == swp->super.altitude);
-  RETURNONFAIL(owp->super.altitudetype == swp->super.altitudetype);
-  RETURNONFAIL(owp->number == swp->number);
-  RETURNONFAIL(owp->speed == swp->speed);
-  RETURNONFAIL(owp->speedtype == swp->speedtype);
-  RETURNONFAIL(owp->climbrate == swp->climbrate);
-  RETURNONFAIL(owp->turntype == swp->turntype);
-  RETURNONFAIL(owp->vehicleactionlist == swp->vehicleactionlist);
-  RETURNONFAIL(owp->vehicleactionlist_ai.length == swp->vehicleactionlist_ai.length);
-  RETURNONFAIL(owp->contingencywaypointa == swp->contingencywaypointa);
-  RETURNONFAIL(owp->contingencywaypointb == swp->contingencywaypointb);
-  RETURNONFAIL(owp->associatedtasks == swp->associatedtasks);
-  RETURNONFAIL(owp->associatedtasks_ai.length == swp->associatedtasks_ai.length);
+  RETURNONFAIL(owp->super.Latitude == swp->super.Latitude);
+  RETURNONFAIL(owp->super.Longitude == swp->super.Longitude);
+  RETURNONFAIL(owp->super.Altitude == swp->super.Altitude);
+  RETURNONFAIL(owp->super.AltitudeType == swp->super.AltitudeType);
+  RETURNONFAIL(owp->Number == swp->Number);
+  RETURNONFAIL(owp->Speed == swp->Speed);
+  RETURNONFAIL(owp->SpeedType == swp->SpeedType);
+  RETURNONFAIL(owp->ClimbRate == swp->ClimbRate);
+  RETURNONFAIL(owp->TurnType == swp->TurnType);
+  RETURNONFAIL(owp->VehicleActionList == swp->VehicleActionList);
+  RETURNONFAIL(owp->VehicleActionList_ai.length == swp->VehicleActionList_ai.length);
+  RETURNONFAIL(owp->ContingencyWaypointA == swp->ContingencyWaypointA);
+  RETURNONFAIL(owp->ContingencyWaypointB == swp->ContingencyWaypointB);
+  RETURNONFAIL(owp->AssociatedTasks == swp->AssociatedTasks);
+  RETURNONFAIL(owp->AssociatedTasks_ai.length == swp->AssociatedTasks_ai.length);
   return true;
 }
 
 
 bool ExhaustiveTest(MissionCommand * omcp) {
   Waypoint * wp = NULL;
-  uint64_t total_tests = (omcp->waypointlist_ai.length*(omcp->waypointlist_ai.length+1))/2;
+  uint64_t total_tests = (omcp->WaypointList_ai.length*(omcp->WaypointList_ai.length+1))/2;
   uint64_t ten_percent = total_tests/10;
   uint64_t tests_completed = 0;
   Waypoint * ws = NULL;
   Waypoint * ws_seg = NULL;
   uint16_t ws_len = 0;
   /* Convert the mission command into an array of waypoints. */
-  ws_len = omcp->waypointlist_ai.length;
+  ws_len = omcp->WaypointList_ai.length;
   ws = calloc(sizeof(Waypoint),ws_len);
   for(uint16_t i = 0; i < ws_len; i++) {
-    ws[i] = *(omcp->waypointlist[i]);
+    ws[i] = *(omcp->WaypointList[i]);
   }
   
   
   /* For each subsequence length less than or equal to the total
      number of waypoints. */
-  for(uint16_t i = 2 ; i <= omcp->waypointlist_ai.length ; i++) {
-    int64_t last_subseq_id = omcp->firstwaypoint;
+  for(uint16_t i = 2 ; i <= omcp->WaypointList_ai.length ; i++) {
+    int64_t last_subseq_id = omcp->FirstWaypoint;
     ws_seg = calloc(sizeof(Waypoint),i);        
     for(uint16_t j = 1 ; j < i ; j++) {
       RETURNONFAIL(AutoPilotMissionCommandSegment(ws,
                                      ws_len,
-                                     omcp->firstwaypoint,
+                                     omcp->FirstWaypoint,
                                      ws_seg,
                                                   i) == true);
       RETURNONFAIL(MissionCommandSegmentCheck(ws,
                                               ws_len,
-                                              omcp->firstwaypoint,
+                                              omcp->FirstWaypoint,
                                               ws_seg,
                                               i));
 
-      last_subseq_id = omcp->firstwaypoint;
+      last_subseq_id = omcp->FirstWaypoint;
       wp = FindWaypoint(ws,ws_len,last_subseq_id);
       RETURNONFAIL(wp != NULL);
       RETURNONFAIL(AutoPilotMissionCommandSegment(ws,
                                ws_len,
-                               wp->number,
+                               wp->Number,
                                ws_seg,
                                             i) == true);      
 
@@ -275,24 +275,24 @@ bool ExhaustiveTest(MissionCommand * omcp) {
       for(uint16_t k = 0 ; k < j ; k++) {
         n++;
         c++;
-        wp = FindWaypoint(ws,ws_len,wp->nextwaypoint);
+        wp = FindWaypoint(ws,ws_len,wp->NextWaypoint);
         RETURNONFAIL(wp != NULL);
       }
-      while(wp->number != wp->nextwaypoint) {
+      while(wp->Number != wp->NextWaypoint) {
         RETURNONFAIL(AutoPilotMissionCommandSegment(ws,
                                        ws_len,
-                                       wp->number,
+                                       wp->Number,
                                        ws_seg,
                                                     i) == true);
         RETURNONFAIL(MissionCommandSegmentCheck(ws,
                                                 ws_len,
-                                                wp->number,
+                                                wp->Number,
                                                 ws_seg,
                                                 i));
         for(uint16_t k = 0 ; k < j ; k++) {
           c++;
           n++;
-          wp = FindWaypoint(ws, ws_len,wp->nextwaypoint);
+          wp = FindWaypoint(ws, ws_len,wp->NextWaypoint);
           RETURNONFAIL(wp != NULL);
         }
       }
@@ -316,7 +316,7 @@ bool WaterwaysTestFromFile() {
     MissionCommand * omcp = NULL;
     lmcp_init_MissionCommand(&omcp);
     /* Load waterways data. */
-    f = fopen("./testdata/waterways.mc","r");
+    f = fopen("./cmasi_test/missioncommands/missioncommand.1.bin","r");
     RETURNONFAIL(f != NULL);
     missioncommandFromFile(f, &omcp);
     fclose(f);

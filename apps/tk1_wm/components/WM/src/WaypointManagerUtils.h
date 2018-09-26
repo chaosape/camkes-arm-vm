@@ -6,7 +6,7 @@
  * Terminology: 
  *
  *  waypoint - Largely self-explanatory. We are only really using the number
- *  and nextwaypoint field in this data structure.
+ *  and NextWaypoint field in this data structure.
  *
  *  mission command - An array of unordered Waypoint data
  *  structures.
@@ -18,7 +18,9 @@
 #ifndef __WAYPOINTMANAGERUTILS_H__
 #define __WAYPOINTMANAGERUTILS_H__
 #include <stdbool.h>
+#ifndef __WAYPOINTMANAGERUTILS_TESTS__
 #include <camkes.h>
+#endif /* __WAYPOINTMANAGERUTILS_TESTS__ */
 #include <stdio.h>
 #include "./CMASI/Waypoint.h"
 
